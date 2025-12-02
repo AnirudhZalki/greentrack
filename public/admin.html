@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - GreenTrack</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2 class="admin-title">🛠 Admin Panel</h2>
+
+<div id="admin-list"></div>
+
+<script>
+async function loadPending() {
+    const res = await fetch("/plant/pending");
+    const plants = await res.json();
+
+    let div = document.getElementById("admin-list");
+
+    plants.forEach(p => {
+        div.innerHTML += `
+            <div class="pending-card">
+                <h3>${p.treeName}</h3>
+                <img src="/uploads/${p.photo}" width="120">
+                <p>${p.latitude}, ${p.longitude}</p>
+                <button onclick="approve('${p._id}')">Approve</button>
+            </div>
+        `;
+    });
+}
+
+async function approve(id) {
+    await fetch("/plant/approve/" + id, { method: "PUT" });
+    alert("Approved!");
+    location.reload();
+}
+
+loadPending();
+</script>
+
+</body>
+</html>

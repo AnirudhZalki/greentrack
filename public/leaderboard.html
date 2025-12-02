@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - GreenTrack</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2 class="leader-title">🏆 Leaderboard</h2>
+
+<table class="leader-table">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>User</th>
+            <th>Points</th>
+        </tr>
+    </thead>
+    <tbody id="leader-body"></tbody>
+</table>
+
+<script>
+async function loadLeaderboard() {
+    const res = await fetch("/auth/leaderboard");
+    const users = await res.json();
+
+    let tbody = document.getElementById("leader-body");
+    users.forEach((u, i) => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${i+1}</td>
+                <td>${u.name}</td>
+                <td>${u.points}</td>
+            </tr>
+        `;
+    });
+}
+
+loadLeaderboard();
+</script>
+
+</body>
+</html>
