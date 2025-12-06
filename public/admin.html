@@ -3,41 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - GreenTrack</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Admin Panel | GreenTrack</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Shared GreenTrack Theme --- */
+        :root {
+            --primary-green: #2ecc71;
+            --dark-green: #27ae60;
+            --danger-red: #e74c3c;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-light: #f4f4f4;
+            --sidebar-width: 260px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f2027; 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6)), 
+                              url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2670&auto=format&fit=crop'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-light);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container { display: flex; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.5rem;
+        }
+
+        .logo { font-size: 1.5rem; font-weight: 700; margin-bottom: 3rem; color: var(--primary-green); display: flex; align-items: center; gap: 10px; }
+        .nav-link { text-decoration: none; color: rgba(255,255,255,0.7); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; transition: all 0.3s ease; display: flex; align-items: center; gap: 12px; font-weight: 500; }
+        .nav-link:hover, .nav-link.active { background: var(--primary-green); color: #fff; transform: translateX(5px); }
+
+        .main-content { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
+
+        header { margin-bottom: 2rem; }
+        header h1 { font-size: 2rem; font-weight: 600; }
+        header p { opacity: 0.7; }
+
+        /* Admin Grid */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        /* Plant Card */
+        .plant-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .plant-card:hover { transform: translateY(-5px); background: rgba(255, 255, 255, 0.12); }
+
+        .plant-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .plant-info h3 { font-size: 1.2rem; margin-bottom: 5px; color: var(--primary-green); }
+        .plant-info p { font-size: 0.9rem; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: auto; }
+        
+        .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        
+        .btn-approve { background: var(--primary-green); }
+        .btn-approve:hover { background: var(--dark-green); }
+        
+        .btn-reject { background: rgba(231, 76, 60, 0.2); border: 1px solid var(--danger-red); color: var(--danger-red); }
+        .btn-reject:hover { background: var(--danger-red); color: white; }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 50px;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 768px) {
+            .app-container { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; padding: 1rem; flex-direction: row; justify-content: space-between; }
+            .nav-link span { display: none; }
+        }
+    </style>
 </head>
 <body>
 
-<h2 class="admin-title">🛠 Admin Panel</h2>
+<div class="app-container">
+    
+    <nav class="sidebar">
+        <div class="logo"><i class="fas fa-leaf"></i> GreenTrack</div>
+        <div style="display:flex; flex-direction:column; gap:5px; width:100%;">
+            <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i> <span>Dashboard</span></a>
+            <a href="map.html" class="nav-link"><i class="fas fa-map-marked-alt"></i> <span>Live Map</span></a>
+            <a href="leaderboard.html" class="nav-link"><i class="fas fa-trophy"></i> <span>Leaderboard</span></a>
+            <a href="profile.html" class="nav-link"><i class="fas fa-user-circle"></i> <span>Profile</span></a>
+            <a href="admin.html" class="nav-link active"><i class="fas fa-shield-alt"></i> <span>Admin</span></a>
+            
+            <button onclick="logout()" class="nav-link" style="background:none; border:none; cursor:pointer; margin-top: 20px; text-align: left;">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </button>
+        </div>
+    </nav>
 
-<div id="admin-list"></div>
+    <main class="main-content">
+        <header>
+            <h1>🛠 Admin Panel</h1>
+            <p>Verify user plantations to award points.</p>
+        </header>
+
+        <div id="admin-list" class="admin-grid">
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Loading pending requests...</p>
+            </div>
+        </div>
+    </main>
+</div>
 
 <script>
-async function loadPending() {
-    const res = await fetch("/plant/pending");
-    const plants = await res.json();
+    const API_BASE = ""; // Empty string relative path if hosting on same server
 
-    let div = document.getElementById("admin-list");
+    async function loadPending() {
+        const token = localStorage.getItem("token");
+        
+        // 1. Security Check
+        if (!token) {
+            alert("Unauthorized. Please login.");
+            window.location.href = "login.html";
+            return;
+        }
 
-    plants.forEach(p => {
-        div.innerHTML += `
-            <div class="pending-card">
-                <h3>${p.treeName}</h3>
-                <img src="/uploads/${p.photo}" width="120">
-                <p>${p.latitude}, ${p.longitude}</p>
-                <button onclick="approve('${p._id}')">Approve</button>
-            </div>
-        `;
-    });
-}
+        try {
+            // 2. Fetch Data with Auth Header
+            const res = await fetch("/plant/pending", {
+                headers: { "Authorization": token }
+            });
+            
+            if (res.status === 401 || res.status === 403) {
+                alert("Access Denied: You are not an Admin.");
+                window.location.href = "dashboard.html";
+                return;
+            }
 
-async function approve(id) {
-    await fetch("/plant/approve/" + id, { method: "PUT" });
-    alert("Approved!");
-    location.reload();
-}
+            const plants = await res.json();
+            const container = document.getElementById("admin-list");
+            container.innerHTML = ""; // Clear loader
 
-loadPending();
+            if (plants.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle fa-3x" style="color:#2ecc71; margin-bottom:15px;"></i>
+                        <p>All caught up! No pending verifications.</p>
+                    </div>`;
+                return;
+            }
+
+            // 3. Render Cards
+            plants.forEach(p => {
+                // Use a default placeholder if photo is missing or broken
+                const imgUrl = p.photo ? `/uploads/${p.photo}` : 'https://via.placeholder.com/300x200?text=No+Image';
+                
+                container.innerHTML += `
+                    <div class="plant-card" id="card-${p._id}">
+                        <img src="${imgUrl}" class="plant-img" alt="Plant Evidence">
+                        <div class="plant-info">
+                            <h3>${p.treeName}</h3>
+                            <p><i class="fas fa-map-marker-alt"></i> ${p.latitude}, ${p.longitude}</p>
+                            <p><i class="fas fa-user"></i> User ID: ${p.userId.substring(0, 8)}...</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-reject" onclick="reject('${p._id}')">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                            <button class="btn btn-approve" onclick="approve('${p._id}')">
+                                <i class="fas fa-check"></i> Verify
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById("admin-list").innerHTML = `<div class="empty-state">Failed to load data.</div>`;
+        }
+    }
+
+    async function approve(id) {
+        if(!confirm("Confirm verification for this plantation?")) return;
+
+        const token = localStorage.getItem("token");
+        try {
+            const res = await fetch("/plant/approve/" + id, { 
+                method: "PUT",
+                headers: { "Authorization": token }
+            });
+
+            if (res.ok) {
+                // Remove card from UI instantly for better UX
+                document.getElementById(`card-${id}`).remove();
+                
+                // If grid is empty, show empty state
+                if(document.querySelectorAll('.plant-card').length === 0) {
+                    loadPending(); 
+                }
+            } else {
+                alert("Failed to approve.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Server Error");
+        }
+    }
+
+    function reject(id) {
+        if(confirm("Reject this submission? This cannot be undone.")) {
+            // Add reject logic here if backend supports it
+            alert("Feature coming soon!"); 
+        }
+    }
+
+    function logout() {
+        if(confirm("Logout?")) {
+            localStorage.removeItem("token");
+            window.location.href = "index.html";
+        }
+    }
+
+    // Initialize
+    loadPending();
 </script>
 
 </body>

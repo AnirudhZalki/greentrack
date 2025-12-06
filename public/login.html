@@ -3,44 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GreenTrack Login</title>
+    <title>Login - GreenTrack</title>
+    
+    <!-- CSS & Icons -->
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-<div class="auth-container">
-    <h2>🌿 GreenTrack</h2>
-    <p class="subtitle">Login to Continue</p>
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="background: var(--accent); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                <i class="fas fa-leaf" style="font-size: 30px; color: var(--primary);"></i>
+            </div>
+            <h2 style="color: var(--primary-dark); margin: 0;">Welcome Back</h2>
+            <p style="color: var(--text-light); margin-top: 5px;">Login to continue your eco-journey</p>
+        </div>
 
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
+        <div style="position: relative;">
+            <i class="fas fa-envelope" style="position: absolute; left: 15px; top: 15px; color: var(--text-light);"></i>
+            <input type="email" id="email" placeholder="Email Address" style="padding-left: 45px;">
+        </div>
 
-    <button class="btn primary" onclick="login()">Login</button>
+        <div style="position: relative;">
+            <i class="fas fa-lock" style="position: absolute; left: 15px; top: 15px; color: var(--text-light);"></i>
+            <input type="password" id="password" placeholder="Password" style="padding-left: 45px;">
+        </div>
 
-    <p class="switch-text">
-        New here? <a href="register.html">Create Account</a>
-    </p>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="login()">
+            Login <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+        </button>
+
+        <p class="switch-text" style="text-align: center; margin-top: 20px; color: var(--text-light);">
+            Don't have an account? <a href="register.html" style="color: var(--primary); font-weight: 600; text-decoration: none;">Create Account</a>
+        </p>
+    </div>
 </div>
+
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="script.js"></script>
 
 <script>
 async function login() {
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
 
-    const res = await fetch("/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    });
+    if(!email || !password) {
+        showToast("Please fill in all fields", "error");
+        return;
+    }
 
-    const data = await res.json();
+    try {
+        const res = await fetch("/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
 
-    if (data.token) {
-        localStorage.setItem("token", data.token);
-        alert("Login successful!");
-        location.href = "dashboard.html";
-    } else {
-        alert(data.message || "Login failed");
+        const data = await res.json();
+
+        if (data.token) {
+            localStorage.setItem("token", data.token);
+            showToast("Login successful! Redirecting...", "success");
+            
+            // Small delay to show the success message
+            setTimeout(() => {
+                location.href = "dashboard.html";
+            }, 1000);
+        } else {
+            showToast(data.message || "Login failed", "error");
+        }
+    } catch (error) {
+        console.error("Login Error:", error);
+        showToast("Something went wrong. Try again.", "error");
     }
 }
 </script>

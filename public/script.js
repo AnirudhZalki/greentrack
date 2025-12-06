@@ -1,188 +1,194 @@
-// -----------------------
-// 1. UI & UTILITY FUNCTIONS
-// -----------------------
+document.addEventListener("DOMContentLoaded", () => {
+    // -----------------------
+    // 1. GLOBAL UI & UTILITIES
+    // -----------------------
 
-// Custom Toast Notification (Replaces native alert)
-function showToast(message, type = 'success') {
-    let container = document.getElementById('toast-container');
-    
-    // Create container if it doesn't exist
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        document.body.appendChild(container);
-    }
+    // Custom Toast Notification (Replaces native alert)
+    window.showToast = function(message, type = 'success') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
 
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-        <span>${message}</span>
-    `;
-    
-    // Style specific to error vs success
-    toast.style.borderLeft = type === 'error' ? '5px solid #ef4444' : '5px solid #4ade80';
-
-    container.appendChild(toast);
-
-    // Animation: Slide in
-    setTimeout(() => toast.style.transform = 'translateX(0)', 10);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-        toast.style.transform = 'translateX(120%)';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// Global Logout
-function logout() {
-    localStorage.removeItem("token");
-    showToast("Logging out securely...", "success");
-    setTimeout(() => location.href = "login.html", 1500);
-}
-
-// -----------------------
-// 2. MAP PICKER (ADD PLANTATION)
-// -----------------------
-
-let modal = document.getElementById("mapModal");
-let modalMap, marker, selectedLat, selectedLng;
-
-function openMap() {
-    if (!modal) return;
-    
-    modal.style.display = "flex";
-
-    // Initialize map only once, or resize it if already exists
-    if (!modalMap) {
-        modalMap = L.map("modalMap").setView([20.59, 78.96], 5);
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        `;
         
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: '© OpenStreetMap'
-        }).addTo(modalMap);
+        container.appendChild(toast);
 
-        // Click to drop pin
-        modalMap.on("click", (e) => {
-            selectedLat = e.latlng.lat;
-            selectedLng = e.latlng.lng;
-
-            if (marker) modalMap.removeLayer(marker);
-
-            marker = L.marker([selectedLat, selectedLng], { draggable: true }).addTo(modalMap);
-            showToast("Location selected!", "success");
+        // Slide in animation
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(0)';
+            toast.style.opacity = '1';
         });
-        
-        // Add "Locate Me" button control
-        addLocateControl(modalMap);
 
-    } else {
-        // Fix Leaflet gray box issue when showing hidden div
-        setTimeout(() => modalMap.invalidateSize(), 200);
-    }
-}
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    };
 
-function closeMap() {
-    if(modal) modal.style.display = "none";
-}
+    window.logout = function() {
+        localStorage.removeItem("token");
+        showToast("Logging out...", "success");
+        setTimeout(() => location.href = "login.html", 1500);
+    };
 
-function saveLocation() {
-    if (!selectedLat || !selectedLng) {
-        showToast("Please select a location on the map first.", "error");
+    // -----------------------
+    // 2. LEAFLET MAP CHECK
+    // -----------------------
+    if (typeof L === 'undefined') {
+        console.error("Leaflet.js is not loaded! Ensure the CDN links are in your HTML.");
         return;
     }
-    document.getElementById("lat").value = selectedLat;
-    document.getElementById("lng").value = selectedLng;
-    
-    // Visual feedback on the button/input
-    const btn = document.querySelector('.map-btn');
-    if(btn) btn.innerHTML = '<i class="fas fa-check"></i> Location Saved';
-    
-    closeMap();
-}
 
-// -----------------------
-// 3. LIVE MAP (DASHBOARD)
-// -----------------------
+    // -----------------------
+    // 3. MAP PICKER (For Adding Plantations)
+    // -----------------------
+    const mapModal = document.getElementById("mapModal");
+    let pickerMap, pickerMarker, selectedLat, selectedLng;
 
-if (document.getElementById("liveMap")) {
-    const map = L.map("liveMap").setView([20.59, 78.96], 5);
+    window.openMap = function() {
+        if (!mapModal) return;
+        mapModal.style.display = "flex";
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '© GreenTrack'
-    }).addTo(map);
+        // Initialize map only once
+        if (!pickerMap) {
+            pickerMap = L.map("modalMap").setView([20.59, 78.96], 5);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: '© OpenStreetMap'
+            }).addTo(pickerMap);
 
-    // --- Custom Icons ---
-    const leafIcon = L.icon({
-        iconUrl: "https://cdn-icons-png.flaticon.com/512/12674/12674251.png", // 3D Green Tree
-        iconSize: [40, 40],
-        popupAnchor: [0, -20]
-    });
+            pickerMap.on("click", (e) => {
+                selectedLat = e.latlng.lat;
+                selectedLng = e.latlng.lng;
 
-    const fireIcon = L.icon({
-        iconUrl: "https://cdn-icons-png.flaticon.com/512/785/785116.png", // Fire
-        iconSize: [35, 35],
-        popupAnchor: [0, -20]
-    });
-
-    const alertIcon = L.icon({
-        iconUrl: "https://cdn-icons-png.flaticon.com/512/564/564619.png", // Warning
-        iconSize: [35, 35],
-        popupAnchor: [0, -20]
-    });
-
-    // --- Fetch Data ---
-    fetch("/plant/all")
-        .then(res => res.json())
-        .then(data => {
-            data.forEach(p => {
-                const popupContent = `
-                    <div class="map-popup">
-                        <img src="/uploads/${p.photo}" onerror="this.src='https://via.placeholder.com/150'">
-                        <h4>${p.treeName}</h4>
-                        <span class="badge">Verified</span>
-                    </div>
-                `;
-                
-                L.marker([p.latitude, p.longitude], { icon: leafIcon })
-                    .addTo(map)
-                    .bindPopup(popupContent);
+                if (pickerMarker) pickerMap.removeLayer(pickerMarker);
+                pickerMarker = L.marker([selectedLat, selectedLng]).addTo(pickerMap);
+                showToast("Location selected!", "success");
             });
-        })
-        .catch(err => console.error("Error loading map data:", err));
-
-    // --- Demo Alerts ---
-    L.marker([11.5, 76.9], { icon: fireIcon }).addTo(map)
-        .bindPopup("<b style='color:red'>🔥 Forest Fire Reported</b><br>High Risk Zone");
-        
-    L.marker([23.1, 84.9], { icon: alertIcon }).addTo(map)
-        .bindPopup("<b>⚠️ Illegal Logging Activity</b><br>Reported 2 hours ago");
-
-    // Attempt to locate user
-    map.locate({setView: true, maxZoom: 10});
-    map.on('locationfound', (e) => {
-        L.circle(e.latlng, { radius: e.accuracy / 2, color: '#4ade80' }).addTo(map);
-    });
-}
-
-// Helper: Add 'Locate Me' Button to Maps
-function addLocateControl(mapInstance) {
-    const locateBtn = L.Control.extend({
-        options: { position: 'topleft' },
-        onAdd: function () {
-            const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom');
-            btn.innerHTML = '<i class="fas fa-crosshairs"></i>';
-            btn.style.width = '30px';
-            btn.style.height = '30px';
-            btn.style.backgroundColor = 'white';
-            btn.style.cursor = 'pointer';
-            btn.title = "Locate Me";
-            
-            btn.onclick = function() {
-                mapInstance.locate({setView: true, maxZoom: 14});
-            }
-            return btn;
         }
-    });
-    mapInstance.addControl(new locateBtn());
-}
+        
+        // CRITICAL FIX: Refresh map size after modal opens to prevent gray tiles
+        setTimeout(() => {
+            pickerMap.invalidateSize();
+        }, 200);
+    };
+
+    window.closeMap = function() {
+        if (mapModal) mapModal.style.display = "none";
+    };
+
+    window.saveLocation = function() {
+        if (!selectedLat || !selectedLng) {
+            showToast("Please pick a location on the map.", "error");
+            return;
+        }
+        const latInput = document.getElementById("lat");
+        const lngInput = document.getElementById("lng");
+        
+        if(latInput && lngInput) {
+            latInput.value = selectedLat;
+            lngInput.value = selectedLng;
+            showToast("Coordinates saved!", "success");
+            closeMap();
+        }
+    };
+
+    // -----------------------
+    // 4. LIVE DASHBOARD MAP
+    // -----------------------
+    // -----------------------
+    // 4. LIVE DASHBOARD MAP (UPDATED)
+    // -----------------------
+    const liveMapContainer = document.getElementById("liveMap");
+    
+    if (liveMapContainer) {
+         const dashboardMap = L.map("liveMap").setView([20.59, 78.96], 5);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: '© GreenTrack'
+        }).addTo(dashboardMap);
+
+        // Define Icons
+        const treeIcon = L.icon({
+            iconUrl: "https://cdn-icons-png.flaticon.com/512/12674/12674251.png",
+            iconSize: [32, 32],
+            popupAnchor: [0, -10]
+        });
+
+        const fireIcon = L.icon({
+            iconUrl: "https://cdn-icons-png.flaticon.com/512/785/785116.png",
+            iconSize: [30, 30]
+        });
+
+        // Load Data from Backend
+        fetch("/plant/all")
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(p => {
+                    if(p.latitude && p.longitude) {
+                        const popupContent = `
+                            <div style="text-align:center">
+                                <strong>${p.treeName}</strong><br>
+                                <img src="/uploads/${p.photo}" style="width:100px; height:80px; object-fit:cover; border-radius:8px; margin-top:5px;">
+                            </div>
+                        `;
+                        L.marker([p.latitude, p.longitude], { icon: treeIcon })
+                            .addTo(dashboardMap)
+                            .bindPopup(popupContent);
+                    }
+                });
+            })
+            .catch(err => console.error("Failed to load plants:", err));
+
+        // Add Demo Risks
+        L.marker([11.5, 76.9], { icon: fireIcon }).addTo(dashboardMap).bindPopup("🔥 Active Fire Alert");
+
+        // "Locate Me" Feature
+        dashboardMap.locate({ setView: true, maxZoom: 10 });
+        dashboardMap.on('locationfound', (e) => {
+            L.circle(e.latlng, { radius: e.accuracy / 2, color: '#2d6a4f' }).addTo(dashboardMap)
+             .bindPopup("You are here").openPopup();
+        });
+
+        // 1. CONNECT TO SOCKET.IO
+        const socket = io(); // Connects to the server automatically
+
+        // 2. LISTEN FOR FIRE ALERTS
+        socket.on("fire_alert", (data) => {
+            console.log("Received Alert:", data);
+            
+            // Add a Pulsing Red Circle
+            const fireCircle = L.circle([data.lat, data.lng], {
+                color: 'red',
+                fillColor: '#f03',
+                fillOpacity: 0.5,
+                radius: 5000 // 5km radius visual
+            }).addTo(dashboardMap);
+
+            // Add Icon Marker
+            L.marker([data.lat, data.lng], { icon: fireIcon })
+                .addTo(dashboardMap)
+                .bindPopup(`
+                    <strong>🔥 FIRE DETECTED!</strong><br>
+                    Temp: ${data.temp}°C<br>
+                    Time: ${new Date().toLocaleTimeString()}
+                `)
+                .openPopup();
+
+            // Pan map to the fire
+            dashboardMap.setView([data.lat, data.lng], 10);
+            
+            // Show Toast Alert
+            showToast(`⚠️ Fire Alert at Lat: ${data.lat}`, "error");
+        });
+    }
+});

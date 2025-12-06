@@ -1,35 +1,52 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const http = require("http"); 
+const { Server } = require("socket.io"); 
+const mqtt = require("mqtt"); 
+const path = require("path");
 
-// Force dotenv to load from the same folder as this file
 require("dotenv").config({ path: __dirname + "/.env" });
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
-app.use('/uploads', express.static("server/uploads"));
 
-// IMPORT ROUTES
+// Serve static frontend files (dashboard, map, etc.)
+app.use(express.static("public")); 
+// Serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, "uploads")));
+
+// --- Routes ---
 const authRoutes = require("./routes/authRoutes");
 const plantRoutes = require("./routes/plantRoutes");
+const userRoutes = require("./routes/userRoutes"); // Import User Routes
 
-// USE ROUTES
-app.use("/auth", authRoutes);
-app.use("/plant", plantRoutes);
+// Mount Routes
+app.use("/auth", authRoutes); // Login & Register
+app.use("/auth", userRoutes); // Profile & Leaderboard (Merged under /auth for frontend compatibility)
+app.use("/plant", plantRoutes); // Plantation Actions
 
-// DEBUG
-console.log("MONGO_URL =", process.env.MONGO_URL);
+// --- MQTT (Fire Detection) ---
+const mqttClient = mqtt.connect("mqtt://broker.hivemq.com"); 
 
-// DB CONNECT
-mongoose.connect(process.env.MONGO_URL)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
-
-app.get("/", (req, res) => {
-  res.send("GreenTrack Server Running...");
+mqttClient.on("connect", () => {
+    console.log("✅ MQTT Connected (Sensors Online)");
+    mqttClient.subscribe("greentrack/forest/fire");
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+mqttClient.on("message", (topic, message) => {
+    const data = JSON.parse(message.toString());
+    console.log("🔥 FIRE DETECTED:", data);
+    io.emit("fire_alert", data);
+});
+
+// --- Database & Server ---
+mongoose.connect(process.env.MONGO_URL)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.log(err));
+
+server.listen(3000, () => console.log("🚀 Server running on port 3000"));

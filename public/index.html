@@ -3,17 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GreenTrack</title>
-    <link rel="stylesheet" href="style.css">
+    <title>GreenTrack | Environmental Monitoring</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-green: #2ecc71;
+            --dark-green: #27ae60;
+            --forest-bg: #0f2027;
+            --text-light: #f4f4f4;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            /* Fallback color */
+            background-color: var(--forest-bg); 
+            /* Background Image with Dark Overlay */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4)), 
+                              url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2670&auto=format&fit=crop'); 
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* --- Main Container (Glassmorphism Effect) --- */
+        .landing-container {
+            text-align: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 3rem 4rem;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            max-width: 600px;
+            width: 90%;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        /* --- Typography --- */
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, #a8ff78);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        /* The leaf emoji doesn't accept gradient text fill, so we span it out or keep it simple. 
+           Here I kept it outside the gradient for color pop. */
+        .logo-icon {
+            font-style: normal;
+        }
+
+        p {
+            font-size: 1.1rem;
+            font-weight: 300;
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+            color: #e0e0e0;
+        }
+
+        /* --- Buttons --- */
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            outline: none;
+        }
+
+        /* Primary Button (Dashboard) */
+        .btn.primary {
+            background-color: var(--primary-green);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn.primary:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.6);
+        }
+
+        /* Secondary Button (Map) */
+        .btn.secondary {
+            background: transparent;
+            border: 2px solid var(--primary-green);
+            color: #fff;
+        }
+
+        .btn.secondary:hover {
+            background-color: var(--primary-green);
+            color: #fff;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.3);
+        }
+
+        /* --- Animation Keyframes --- */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .landing-container { padding: 2rem; }
+            .btn { width: 100%; }
+        }
+    </style>
 </head>
 <body>
 
 <div class="landing-container">
-    <h1>🌿 GreenTrack</h1>
+    <h1><span class="logo-icon">🌿</span> GreenTrack</h1>
     <p>Track plantations, protect forests, and monitor environmental health in real-time.</p>
 
-    <button class="btn primary" onclick="location.href='dashboard.html'">Dashboard</button>
-    <button class="btn secondary" onclick="location.href='map.html'">Live Map</button>
+    <div class="button-group">
+        <button class="btn primary" onclick="location.href='dashboard.html'">Dashboard</button>
+        <button class="btn secondary" onclick="location.href='map.html'">Live Map</button>
+    </div>
 </div>
 
 </body>

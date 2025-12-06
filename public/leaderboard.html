@@ -3,43 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaderboard - GreenTrack</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Leaderboard | GreenTrack</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-green: #2ecc71;
+            --text-light: #f4f4f4;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --sidebar-width: 260px;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f2027; 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                              url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2670&auto=format&fit=crop'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-light);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container { display: flex; height: 100vh; }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.5rem;
+        }
+
+        .logo { font-size: 1.5rem; font-weight: 700; margin-bottom: 3rem; color: var(--primary-green); display: flex; align-items: center; gap: 10px; }
+        .nav-link { text-decoration: none; color: rgba(255,255,255,0.7); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; transition: all 0.3s ease; display: flex; align-items: center; gap: 12px; font-weight: 500; }
+        .nav-link:hover, .nav-link.active { background: var(--primary-green); color: #fff; transform: translateX(5px); }
+
+        .main-content { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
+
+        .leader-table-container {
+            margin-top: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+        }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        th { text-align: left; padding: 15px; color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        
+        tbody tr { background: rgba(255, 255, 255, 0.05); transition: 0.2s; }
+        tbody tr:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.01); }
+        
+        tbody tr td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        tbody tr td:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+        td { padding: 15px; vertical-align: middle; }
+
+        .rank-icon { font-size: 1.4rem; margin-right: 5px;}
+        .rank-1 { color: var(--gold); }
+        .rank-2 { color: var(--silver); }
+        .rank-3 { color: var(--bronze); }
+        .rank-num { font-weight: 700; color: rgba(255,255,255,0.5); margin-left: 10px;}
+
+        .user-info { display: flex; align-items: center; gap: 15px; font-weight: 500; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-green); }
+        .points-badge { background: rgba(46, 204, 113, 0.2); color: var(--primary-green); padding: 5px 12px; border-radius: 20px; font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .app-container { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; flex-direction: row; justify-content: space-between; padding: 1rem; }
+            .nav-link span { display: none; }
+        }
+    </style>
 </head>
 <body>
 
-<h2 class="leader-title">🏆 Leaderboard</h2>
+<div class="app-container">
+    <nav class="sidebar">
+        <div class="logo"><i class="fas fa-leaf"></i> GreenTrack</div>
+        <div style="display:flex; flex-direction:column; gap:5px; width:100%;">
+            <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i> <span>Dashboard</span></a>
+            <a href="map.html" class="nav-link"><i class="fas fa-map-marked-alt"></i> <span>Live Map</span></a>
+            <a href="leaderboard.html" class="nav-link active"><i class="fas fa-trophy"></i> <span>Leaderboard</span></a>
+            <a href="profile.html" class="nav-link"><i class="fas fa-user-circle"></i> <span>Profile</span></a>
+            <button onclick="logout()" class="nav-link" style="background:none; border:none; cursor:pointer; margin-top: 20px; text-align: left;">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </button>
+        </div>
+    </nav>
 
-<table class="leader-table">
-    <thead>
-        <tr>
-            <th>Rank</th>
-            <th>User</th>
-            <th>Points</th>
-        </tr>
-    </thead>
-    <tbody id="leader-body"></tbody>
-</table>
+    <main class="main-content">
+        <header>
+            <h1>🏆 Top Eco-Warriors</h1>
+            <p>See who is making the biggest impact on our planet.</p>
+        </header>
+
+        <div class="leader-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="15%">Rank</th>
+                        <th>User</th>
+                        <th width="20%">Contribution</th>
+                    </tr>
+                </thead>
+                <tbody id="leader-body">
+                    <tr>
+                        <td colspan="3" style="text-align:center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Loading rankings...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
 
 <script>
-async function loadLeaderboard() {
-    const res = await fetch("/auth/leaderboard");
-    const users = await res.json();
+    async function loadLeaderboard() {
+        try {
+            const res = await fetch("/auth/leaderboard");
+            let users = [];
 
-    let tbody = document.getElementById("leader-body");
-    users.forEach((u, i) => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${i+1}</td>
-                <td>${u.name}</td>
-                <td>${u.points}</td>
-            </tr>
-        `;
-    });
-}
+            if(res.ok) {
+                users = await res.json();
+            } else {
+                // Fallback Mock Data if server is offline (for demo)
+                users = [
+                    { name: "Anirudh Zalki", points: 1500 },
+                    { name: "Karthik C", points: 1200 },
+                    { name: "Harshad M", points: 950 },
+                    { name: "Goutam K", points: 400 }
+                ];
+            }
 
-loadLeaderboard();
+            // Sort by points desc just in case backend didn't
+            users.sort((a, b) => b.points - a.points);
+
+            const tbody = document.getElementById("leader-body");
+            tbody.innerHTML = ""; 
+
+            users.forEach((u, i) => {
+                let rankDisplay = `<span class="rank-num">#${i+1}</span>`;
+                
+                if (i === 0) rankDisplay = `<i class="fas fa-medal rank-icon rank-1"></i>`;
+                if (i === 1) rankDisplay = `<i class="fas fa-medal rank-icon rank-2"></i>`;
+                if (i === 2) rankDisplay = `<i class="fas fa-medal rank-icon rank-3"></i>`;
+
+                const avatarUrl = `https://ui-avatars.com/api/?name=${u.name}&background=2ecc71&color=fff&size=64`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="text-align:center;">${rankDisplay}</td>
+                        <td>
+                            <div class="user-info">
+                                <img src="${avatarUrl}" class="user-avatar" alt="${u.name}">
+                                <span>${u.name}</span>
+                            </div>
+                        </td>
+                        <td><span class="points-badge">${u.points} pts</span></td>
+                    </tr>
+                `;
+            });
+
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById("leader-body").innerHTML = `<tr><td colspan="3" style="text-align:center;">Failed to load data.</td></tr>`;
+        }
+    }
+
+    function logout() {
+        if(confirm("Logout?")) {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
+    }
+
+    loadLeaderboard();
 </script>
-
 </body>
 </html>
