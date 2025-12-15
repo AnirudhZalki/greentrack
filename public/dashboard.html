@@ -41,7 +41,7 @@
         /* --- Layout --- */
         .app-container { display: flex; height: 100vh; }
 
-        /* --- Sidebar (Consistent with Leaderboard) --- */
+        /* --- Sidebar --- */
         .sidebar {
             width: var(--sidebar-width);
             background: rgba(0, 0, 0, 0.6);
@@ -198,7 +198,6 @@
             margin: 10px 0;
         }
 
-        /* --- Mobile Responsive --- */
         @media (max-width: 768px) {
             .app-container { flex-direction: column; height: auto; overflow-y: auto;}
             .sidebar { width: 100%; padding: 1rem; flex-direction: row; justify-content: space-between; border-bottom: 1px solid var(--glass-border); border-right: none; }
@@ -234,7 +233,7 @@
         
         <header class="dashboard-header">
             <div>
-                <h1>Hello, Eco-Warrior! 👋</h1>
+                <h1 id="welcome-msg">Hello, Eco-Warrior! 👋</h1>
                 <p>Ready to make the world a little greener today?</p>
             </div>
             
@@ -277,11 +276,11 @@
                         <i class="fas fa-medal"></i>
                     </div>
                     <h3>Your Impact</h3>
-                    <div class="score-text">1,250 Pts</div>
-                    <p>You are in the top 5% of contributors this month!</p>
+                    <div class="score-text" id="dash-points">-- Pts</div>
+                    <p>You are contributing to a greener planet!</p>
                 </div>
-                <div style="font-size: 0.8rem; color: #aaa; text-align: center; margin-top: 10px;">
-                    Next Badge: Forest Guardian
+                <div id="dash-badge" style="font-size: 0.8rem; color: #aaa; text-align: center; margin-top: 10px;">
+                    Loading rank...
                 </div>
             </div>
 
@@ -290,14 +289,58 @@
 </div>
 
 <script>
-    // Logout Logic
-    function logout() {
-        if(confirm("Are you sure you want to logout?")) {
-            window.location.href = 'index.html';
+    // --- 1. Badge Logic ---
+    function getBadgeStatus(points) {
+        if (points < 500) return { current: "Rookie", next: "Scout", limit: 500 };
+        if (points < 1000) return { current: "Scout", next: "Ranger", limit: 1000 };
+        if (points < 2500) return { current: "Ranger", next: "Guardian", limit: 2500 };
+        return { current: "Guardian", next: "Legend", limit: 5000 };
+    }
+
+    // --- 2. Load User Stats (Points & Badge) ---
+    async function loadUserStats() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            // If no token, we can redirect or just show default
+            // window.location.href = 'login.html'; 
+            return;
+        }
+
+        try {
+            const res = await fetch("/auth/profile", {
+                headers: { "Authorization": token }
+            });
+            
+            if (res.ok) {
+                const user = await res.json();
+                
+                // Update Name
+                if(user.name) {
+                    document.getElementById('welcome-msg').innerText = `Hello, ${user.name.split(' ')[0]}! 👋`;
+                }
+
+                const points = user.points || 0;
+                
+                // Update Points UI
+                document.getElementById('dash-points').innerText = `${points} Pts`;
+
+                // Calculate Badge
+                const badgeData = getBadgeStatus(points);
+                const pointsNeeded = badgeData.limit - points;
+                const badgeEl = document.getElementById('dash-badge');
+
+                if (badgeData.current === "Legend") {
+                    badgeEl.innerHTML = `🌟 Status: <b style="color:#f1c40f">Forest Legend</b>`;
+                } else {
+                    badgeEl.innerHTML = `Current: <b style="color:#2ecc71">${badgeData.current}</b> • ${pointsNeeded} pts to <b>${badgeData.next}</b>`;
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load stats", error);
         }
     }
 
-    // Weather Logic for Hubli (15.36, 75.12)
+    // --- 3. Weather Logic ---
     async function loadWeather() {
         try {
             const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=15.36&longitude=75.12&current_weather=true");
@@ -306,17 +349,15 @@
             const temp = data.current_weather.temperature;
             const isDay = data.current_weather.is_day; // 1 for day, 0 for night
             
-            // Update Text
             document.querySelector('.weather-info strong').innerText = `${temp}°C`;
             
-            // Update Icon based on day/night
             const iconElement = document.querySelector('.weather-icon');
             if(isDay === 1) {
                 iconElement.className = 'fas fa-sun weather-icon';
-                iconElement.style.color = '#f1c40f'; // Yellow
+                iconElement.style.color = '#f1c40f'; 
             } else {
                 iconElement.className = 'fas fa-moon weather-icon';
-                iconElement.style.color = '#f4f4f4'; // White
+                iconElement.style.color = '#f4f4f4';
             }
 
         } catch (error) {
@@ -325,6 +366,16 @@
         }
     }
 
+    // --- 4. Logout Logic ---
+    function logout() {
+        if(confirm("Are you sure you want to logout?")) {
+            localStorage.removeItem("token");
+            window.location.href = 'index.html';
+        }
+    }
+
+    // Initialize
+    loadUserStats();
     loadWeather();
 </script>
 

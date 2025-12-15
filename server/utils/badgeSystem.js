@@ -1,7 +1,7 @@
 const User = require("../models/User");
-const Plantation = require("../models/Plantation");
+const Plantation = require("../models/Plantation"); //
 
-// Define Badge Rules
+// Define Badge Rules (Ordered from easiest to hardest)
 const BADGES = [
     { name: "First Sprout", condition: (count, points) => count >= 1, description: "Planted your first tree" },
     { name: "Nature Watcher", condition: (count, points) => count >= 5, description: "Uploaded 5 verification photos" },
@@ -16,18 +16,19 @@ async function checkBadges(userId) {
         
         let newBadges = [];
 
-        // Check each badge rule
         for (const badge of BADGES) {
-            // If user meets condition AND doesn't have the badge yet
             const alreadyHas = user.badges.some(b => b.badgeName === badge.name);
             
             if (!alreadyHas && badge.condition(treeCount, user.points)) {
                 
-                // Add badge to User profile
+                // 1. Add to history
                 user.badges.push({
                     badgeName: badge.name,
                     dateEarned: new Date()
                 });
+
+                // 2. UPDATE MAIN DISPLAY TITLE (The Fix)
+                user.badge = badge.name; 
                 
                 newBadges.push(badge.name);
             }
@@ -37,8 +38,7 @@ async function checkBadges(userId) {
             await user.save();
         }
 
-        // Return the latest badge earned (or null) to show a popup
-        return newBadges.length > 0 ? newBadges[0] : null;
+        return newBadges.length > 0 ? newBadges[newBadges.length - 1] : null; // Return highest earned
 
     } catch (error) {
         console.error("Badge Check Error:", error);

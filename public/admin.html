@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* --- Shared GreenTrack Theme --- */
+        /* Shared Theme */
         :root {
             --primary-green: #2ecc71;
             --dark-green: #27ae60;
@@ -56,9 +56,7 @@
 
         .main-content { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
 
-        header { margin-bottom: 2rem; }
-        header h1 { font-size: 2rem; font-weight: 600; }
-        header p { opacity: 0.7; }
+        .section-title { font-size: 1.5rem; margin: 30px 0 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; font-weight: 600; }
 
         /* Admin Grid */
         .admin-grid {
@@ -67,7 +65,7 @@
             gap: 25px;
         }
 
-        /* Plant Card */
+        /* Plant/Fire Card */
         .plant-card {
             background: var(--glass-bg);
             backdrop-filter: blur(12px);
@@ -79,23 +77,18 @@
             flex-direction: column;
             gap: 15px;
         }
-
         .plant-card:hover { transform: translateY(-5px); background: rgba(255, 255, 255, 0.12); }
 
         .plant-img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
+            width: 100%; height: 180px; object-fit: cover;
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
         }
 
         .plant-info h3 { font-size: 1.2rem; margin-bottom: 5px; color: var(--primary-green); }
         .plant-info p { font-size: 0.9rem; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
 
         .btn-group { display: flex; gap: 10px; margin-top: auto; }
-        
-        .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
         
         .btn-approve { background: var(--primary-green); }
         .btn-approve:hover { background: var(--dark-green); }
@@ -103,13 +96,11 @@
         .btn-reject { background: rgba(231, 76, 60, 0.2); border: 1px solid var(--danger-red); color: var(--danger-red); }
         .btn-reject:hover { background: var(--danger-red); color: white; }
 
+        .btn-resolve { background: #3498db; }
+        .btn-resolve:hover { background: #2980b9; }
+
         /* Empty State */
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 50px;
-            opacity: 0.6;
-        }
+        .empty-state { grid-column: 1 / -1; text-align: center; padding: 30px; opacity: 0.6; background: rgba(255,255,255,0.05); border-radius: 15px; }
 
         @media (max-width: 768px) {
             .app-container { flex-direction: column; height: auto; }
@@ -121,7 +112,6 @@
 <body>
 
 <div class="app-container">
-    
     <nav class="sidebar">
         <div class="logo"><i class="fas fa-leaf"></i> GreenTrack</div>
         <div style="display:flex; flex-direction:column; gap:5px; width:100%;">
@@ -130,7 +120,6 @@
             <a href="leaderboard.html" class="nav-link"><i class="fas fa-trophy"></i> <span>Leaderboard</span></a>
             <a href="profile.html" class="nav-link"><i class="fas fa-user-circle"></i> <span>Profile</span></a>
             <a href="admin.html" class="nav-link active"><i class="fas fa-shield-alt"></i> <span>Admin</span></a>
-            
             <button onclick="logout()" class="nav-link" style="background:none; border:none; cursor:pointer; margin-top: 20px; text-align: left;">
                 <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
             </button>
@@ -138,92 +127,144 @@
     </nav>
 
     <main class="main-content">
-        <header>
-            <h1>🛠 Admin Panel</h1>
-            <p>Verify user plantations to award points.</p>
+        <header style="margin-bottom:2rem;">
+            <h1 style="font-size:2rem; font-weight:600;">🛠 Admin Verification</h1>
+            <p style="opacity:0.7;">Approve tree plantations and fire reports.</p>
         </header>
 
-        <div id="admin-list" class="admin-grid">
-            <div class="empty-state">
-                <i class="fas fa-spinner fa-spin fa-2x"></i>
-                <p>Loading pending requests...</p>
-            </div>
+        <h2 class="section-title" style="color: #e74c3c;">🔥 Active Fire Emergencies (Live on Map)</h2>
+        <div id="active-fire-list" class="admin-grid">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Checking map...</div>
+        </div>
+
+        <h2 class="section-title">⏳ Pending Verification</h2>
+        <div id="pending-list" class="admin-grid">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading requests...</div>
         </div>
     </main>
 </div>
 
 <script>
-    const API_BASE = ""; // Empty string relative path if hosting on same server
+    const token = localStorage.getItem("token");
 
-    async function loadPending() {
-        const token = localStorage.getItem("token");
-        
-        // 1. Security Check
-        if (!token) {
-            alert("Unauthorized. Please login.");
-            window.location.href = "login.html";
-            return;
-        }
+    // --- 1. LOAD ACTIVE FIRES (Verified & On Map) ---
+    async function loadActiveFires() {
+        if (!token) return;
 
         try {
-            // 2. Fetch Data with Auth Header
+            // Reusing /all route which returns all verified items
+            const res = await fetch("/plant/all");
+            const items = await res.json();
+            
+            // Filter only verified fires
+            const fires = items.filter(i => i.type === 'fire');
+            const container = document.getElementById("active-fire-list");
+            container.innerHTML = "";
+
+            if (fires.length === 0) {
+                container.innerHTML = `<div class="empty-state">✅ No active fires reported.</div>`;
+            } else {
+                fires.forEach(p => {
+                    const name = p.userId && p.userId.name ? p.userId.name : "Unknown";
+                    container.innerHTML += `
+                        <div class="plant-card" style="border: 2px solid #e74c3c; background: rgba(231, 76, 60, 0.15);">
+                            <div style="text-align:center; padding:10px;">
+                                <i class="fas fa-fire-extinguisher fa-3x" style="color: #e74c3c;"></i>
+                            </div>
+                            <div class="plant-info">
+                                <h3 style="color:#e74c3c">Active Alert</h3>
+                                <p>"${p.description}"</p>
+                                <p><i class="fas fa-map-marker-alt"></i> ${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)}</p>
+                                <p><i class="fas fa-user"></i> Rep: ${name}</p>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-resolve" onclick="resolveFire('${p._id}')" style="background:#27ae60;">
+                                    <i class="fas fa-check-double"></i> Mark Extinguished
+                                </button>
+                            </div>
+                        </div>`;
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // --- 2. LOAD PENDING REQUESTS ---
+    async function loadPending() {
+        if (!token) return window.location.href = "login.html";
+
+        try {
             const res = await fetch("/plant/pending", {
                 headers: { "Authorization": token }
             });
             
             if (res.status === 401 || res.status === 403) {
-                alert("Access Denied: You are not an Admin.");
-                window.location.href = "dashboard.html";
-                return;
+                alert("Access Denied.");
+                return window.location.href = "dashboard.html";
             }
 
-            const plants = await res.json();
-            const container = document.getElementById("admin-list");
-            container.innerHTML = ""; // Clear loader
+            const items = await res.json();
+            const container = document.getElementById("pending-list");
+            container.innerHTML = "";
 
-            if (plants.length === 0) {
+            if (items.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-check-circle fa-3x" style="color:#2ecc71; margin-bottom:15px;"></i>
-                        <p>All caught up! No pending verifications.</p>
+                        <i class="fas fa-check-circle fa-2x" style="color:#2ecc71; margin-bottom:10px;"></i>
+                        <p>No pending verifications.</p>
                     </div>`;
                 return;
             }
 
-            // 3. Render Cards
-            plants.forEach(p => {
-                // Use a default placeholder if photo is missing or broken
-                const imgUrl = p.photo ? `/uploads/${p.photo}` : 'https://via.placeholder.com/300x200?text=No+Image';
-                
-                container.innerHTML += `
-                    <div class="plant-card" id="card-${p._id}">
-                        <img src="${imgUrl}" class="plant-img" alt="Plant Evidence">
-                        <div class="plant-info">
-                            <h3>${p.treeName}</h3>
-                            <p><i class="fas fa-map-marker-alt"></i> ${p.latitude}, ${p.longitude}</p>
-                            <p><i class="fas fa-user"></i> User ID: ${p.userId.substring(0, 8)}...</p>
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn btn-reject" onclick="reject('${p._id}')">
-                                <i class="fas fa-times"></i> Reject
-                            </button>
-                            <button class="btn btn-approve" onclick="approve('${p._id}')">
-                                <i class="fas fa-check"></i> Verify
-                            </button>
-                        </div>
-                    </div>
-                `;
+            items.forEach(p => {
+                let displayName = p.userId && p.userId.name ? p.userId.name : "Unknown User";
+
+                if (p.type === 'fire') {
+                    // --- RED FIRE CARD (Pending) ---
+                    container.innerHTML += `
+                        <div class="plant-card" id="card-${p._id}" style="border: 1px solid #e74c3c; background: rgba(231, 76, 60, 0.1);">
+                            <div style="text-align:center; padding: 20px 0;">
+                                <i class="fas fa-fire fa-3x" style="color: #e74c3c;"></i>
+                            </div>
+                            <div class="plant-info">
+                                <h3 style="color: #e74c3c; margin-bottom:5px;">🔥 Fire Reported</h3>
+                                <p style="font-size:0.9rem; margin-bottom:10px;">"${p.description || 'No description'}"</p>
+                                <p><i class="fas fa-map-marker-alt"></i> ${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)}</p>
+                                <p><i class="fas fa-user"></i> ${displayName}</p>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-reject" onclick="deleteItem('${p._id}')"><i class="fas fa-times"></i> Dismiss</button>
+                                <button class="btn btn-approve" onclick="approve('${p._id}')" style="background: #e74c3c;"><i class="fas fa-check"></i> Verify & Email</button>
+                            </div>
+                        </div>`;
+                } else {
+                    // --- GREEN TREE CARD (Pending) ---
+                    const imgUrl = p.photo ? `/uploads/${p.photo}` : 'https://via.placeholder.com/300x200';
+                    container.innerHTML += `
+                        <div class="plant-card" id="card-${p._id}">
+                            <img src="${imgUrl}" class="plant-img">
+                            <div class="plant-info" style="margin-top:10px;">
+                                <h3 style="color:#2ecc71; margin-bottom:5px;">${p.treeName}</h3>
+                                <p><i class="fas fa-map-marker-alt"></i> ${p.latitude}, ${p.longitude}</p>
+                                <p><i class="fas fa-user"></i> ${displayName}</p>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-reject" onclick="deleteItem('${p._id}')"><i class="fas fa-times"></i> Reject</button>
+                                <button class="btn btn-approve" onclick="approve('${p._id}')"><i class="fas fa-check"></i> Verify</button>
+                            </div>
+                        </div>`;
+                }
             });
         } catch (error) {
-            console.error("Error:", error);
-            document.getElementById("admin-list").innerHTML = `<div class="empty-state">Failed to load data.</div>`;
+            console.error(error);
         }
     }
 
-    async function approve(id) {
-        if(!confirm("Confirm verification for this plantation?")) return;
+    // --- ACTIONS ---
 
-        const token = localStorage.getItem("token");
+    // Approve (Moves to Map + Sends Email if Fire)
+    async function approve(id) {
+        if(!confirm("Verify this item? It will appear on the public map.")) return;
+
         try {
             const res = await fetch("/plant/approve/" + id, { 
                 method: "PUT",
@@ -231,27 +272,35 @@
             });
 
             if (res.ok) {
-                // Remove card from UI instantly for better UX
-                document.getElementById(`card-${id}`).remove();
-                
-                // If grid is empty, show empty state
-                if(document.querySelectorAll('.plant-card').length === 0) {
-                    loadPending(); 
-                }
-            } else {
-                alert("Failed to approve.");
+                // Refresh both lists to show updated status
+                refreshAll();
             }
-        } catch (err) {
-            console.error(err);
-            alert("Server Error");
-        }
+        } catch (err) { alert("Server Error"); }
     }
 
-    function reject(id) {
-        if(confirm("Reject this submission? This cannot be undone.")) {
-            // Add reject logic here if backend supports it
-            alert("Feature coming soon!"); 
-        }
+    // Resolve Active Fire (Removes from Map)
+    async function resolveFire(id) {
+        if(!confirm("Has this fire been extinguished? This will remove the alert from the map.")) return;
+        deleteItem(id);
+    }
+
+    // Delete Item (Reject Pending OR Extinguish Active)
+    async function deleteItem(id) {
+        try {
+            const res = await fetch("/plant/delete/" + id, { 
+                method: "DELETE", 
+                headers: { "Authorization": token } 
+            });
+            
+            if(res.ok) {
+                refreshAll();
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    function refreshAll() {
+        loadActiveFires();
+        loadPending();
     }
 
     function logout() {
@@ -262,7 +311,7 @@
     }
 
     // Initialize
-    loadPending();
+    refreshAll();
 </script>
 
 </body>

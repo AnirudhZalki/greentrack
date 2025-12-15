@@ -9,17 +9,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
         :root {
-            --plantation-green: #00b894;
-            --fire-red: #ff3f34;       
-            --deforest-brown: #d63031; 
             --glass-bg: rgba(255, 255, 255, 0.95);
             --text-dark: #2d3436;
+            --primary-green: #2ecc71;
+            --fire-red: #e74c3c;
         }
 
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Poppins', sans-serif; }
@@ -38,54 +37,29 @@
         }
 
         /* Top Left: Header & Back */
-        .map-header {
-            top: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .map-header { top: 20px; left: 20px; display: flex; align-items: center; gap: 15px; }
+        .back-btn { background: var(--text-dark); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        /* Report Fire Button (Bottom Left) */
+        .report-btn {
+            bottom: 30px; left: 20px;
+            background: var(--fire-red); color: white;
+            border: none; padding: 12px 20px; border-radius: 50px;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); transition: 0.3s;
         }
+        .report-btn:hover { transform: scale(1.05); background: #c0392b; }
+        .report-btn.active { animation: pulse 1.5s infinite; border: 2px solid white; }
 
-        .back-btn {
-            background: var(--text-dark);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.3s;
-        }
-        .back-btn:hover { transform: scale(1.1); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
 
-        /* Bottom Right: Legend (Moved from top-right to avoid layer control) */
-        .map-legend {
-            bottom: 30px;
-            right: 20px;
-            width: 220px;
-        }
-
-        .legend-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-        .legend-item { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; }
-        .icon-box { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: white; font-size: 12px; }
-
-        /* Bottom Center: Stats */
-        .map-stats {
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 40px;
-            padding: 15px 40px;
-            border-radius: 50px;
-        }
-
-        .stat-item { text-align: center; }
-        .stat-val { display: block; font-weight: 800; font-size: 1.2rem; }
-        .stat-lbl { font-size: 0.75rem; color: #636e72; font-weight: 600; text-transform: uppercase;}
+        /* Modal Styles */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
+        .modal input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        .btn-cancel { background: #ddd; color: #333; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .btn-submit { background: var(--fire-red); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -98,102 +72,173 @@
         </button>
         <div>
             <h2 style="margin:0; font-size: 1.1rem; font-weight: 700;">Global Monitor</h2>
-            <p style="margin:0; font-size: 0.8rem; color: #636e72;">Live updates</p>
+            <p style="margin:0; font-size: 0.8rem; color: #636e72;">Live Updates</p>
         </div>
     </div>
 
-    <div class="floating-ui map-legend">
-        <div class="legend-title">Map Legend</div>
-        <div class="legend-item">
-            <div class="icon-box" style="background: var(--plantation-green);"><i class="fas fa-tree"></i></div>
-            <span>Plantations</span>
-        </div>
-        <div class="legend-item">
-            <div class="icon-box" style="background: var(--deforest-brown);"><i class="fas fa-ban"></i></div>
-            <span>Deforestation</span>
-        </div>
-        <div class="legend-item">
-            <div class="icon-box" style="background: var(--fire-red);"><i class="fas fa-fire"></i></div>
-            <span>Active Fire</span>
-        </div>
-    </div>
+    <button class="floating-ui report-btn" onclick="toggleReportMode()" id="btnReport">
+        <i class="fas fa-bullhorn"></i> Report Fire
+    </button>
 
-    <div class="floating-ui map-stats">
-        <div class="stat-item">
-            <span class="stat-val" style="color: var(--plantation-green);">2,401</span>
-            <span class="stat-lbl">Planted</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-val" style="color: var(--fire-red);">4</span>
-            <span class="stat-lbl">Alerts</span>
+    <div id="fireModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: #e74c3c; margin-top:0;"><i class="fas fa-fire"></i> Report Fire</h3>
+            <p style="font-size: 0.9rem; color: #666;">Location captured. Please add details:</p>
+            
+            <input type="text" id="fireDesc" placeholder="Description (e.g. Huge smoke near highway)">
+            <input type="hidden" id="fireLat">
+            <input type="hidden" id="fireLng">
+            
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-submit" onclick="submitFireReport()">Submit Report</button>
+            </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
-        // --- 1. Define Layers ---
-        const standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        });
-
-        const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19,
-            attribution: 'Tiles © Esri'
-        });
-
-        // --- 2. Init Map ---
-        // Initialize with 'standard' layer by default
+        // --- 1. Map Initialization ---
         const map = L.map('liveMap', {
-            center: [15.3647, 75.1240],
+            center: [15.3647, 75.1240], // Hubli
             zoom: 13,
-            layers: [standard], // Default layer
-            zoomControl: false // Hide default zoom to put it somewhere else if needed (or just use scroll)
+            zoomControl: false 
         });
 
-        // Add Zoom control manually to bottom right
-        L.control.zoom({ position: 'topright' }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // --- 3. Add Layer Control (The "Selector" Button) ---
-        const baseMaps = {
-            "Standard Map": standard,
-            "Satellite View": satellite
-        };
-        L.control.layers(baseMaps).addTo(map);
-
-        // --- 4. Define Marker Icons ---
-        const plantIcon = L.divIcon({
-            html: '<div style="background:#00b894; width:30px; height:30px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>',
-            className: 'custom-marker'
+        // --- 2. Custom Icons ---
+        const TreeIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/489/489969.png', 
+            iconSize: [40, 40], 
+            iconAnchor: [20, 40], 
+            popupAnchor: [0, -40]
         });
 
-        // --- 5. Load Data ---
+        const FireIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/785/785116.png',
+            iconSize: [35, 35],
+            iconAnchor: [17, 35],
+            popupAnchor: [0, -35],
+            className: 'pulsing-icon' 
+        });
+
+        // --- 3. Load All Data (Trees & Fires) ---
         async function loadMapData() {
             try {
                 const res = await fetch("/plant/all");
-                if(!res.ok) throw new Error("API Fail");
-                const plants = await res.json();
+                const items = await res.json();
+                
+                items.forEach(item => {
+                    if (!item.latitude || !item.longitude) return;
 
-                plants.forEach(plant => {
-                    if(plant.latitude && plant.longitude) {
-                        L.marker([plant.latitude, plant.longitude], { icon: plantIcon })
+                    if (item.type === 'fire') {
+                        // --- FIRE MARKER ---
+                        L.marker([item.latitude, item.longitude], { icon: FireIcon })
                         .addTo(map)
                         .bindPopup(`
-                            <div style="font-family:'Poppins',sans-serif;">
-                                <b style="color:#00b894; font-size:1.1rem;">${plant.treeName}</b><br>
-                                <span style="font-size:0.8rem; color:#666;">Status: ${plant.verified ? "Verified ✅" : "Pending ⏳"}</span>
+                            <div style="text-align:center; font-family:'Poppins';">
+                                <b style="color:red;">🔥 Verified Fire Alert</b><br>
+                                <span style="font-size:0.9rem;">${item.description}</span><br>
+                                <span style="font-size:0.8rem; color:#666;">Reported by: ${item.userId ? item.userId.name : 'Unknown'}</span>
+                            </div>
+                        `);
+                        
+                        // Add Warning Circle
+                        L.circle([item.latitude, item.longitude], {
+                            color: 'red', fillColor: '#f03', fillOpacity: 0.3, radius: 1000
+                        }).addTo(map);
+
+                    } else {
+                        // --- TREE MARKER ---
+                        const img = item.photo ? `/uploads/${item.photo}` : 'https://via.placeholder.com/150';
+                        
+                        L.marker([item.latitude, item.longitude], { icon: TreeIcon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div style="text-align:center; font-family:'Poppins'; width:160px;">
+                                <img src="${img}" style="width:100%; height:100px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
+                                <b style="color:#2ecc71;">${item.treeName}</b><br>
+                                <span style="font-size:0.8rem;">By: ${item.userId ? item.userId.name : 'Unknown'}</span>
                             </div>
                         `);
                     }
                 });
+
             } catch (error) {
-                console.log("Mocking data due to fetch error...");
-                // Just for testing if backend is offline
-                L.marker([15.3647, 75.1240], { icon: plantIcon }).addTo(map).bindPopup("Test Tree (Hubli)");
+                console.log("Error loading map data", error);
             }
         }
 
+        // --- 4. Fire Reporting Logic ---
+        let reportMode = false;
+
+        function toggleReportMode() {
+            reportMode = !reportMode;
+            const btn = document.getElementById('btnReport');
+            
+            if(reportMode) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-crosshairs"></i> Tap Location on Map';
+                document.body.style.cursor = "crosshair";
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fas fa-bullhorn"></i> Report Fire';
+                document.body.style.cursor = "default";
+            }
+        }
+
+        // Listen for click on map
+        map.on('click', function(e) {
+            if(!reportMode) return;
+
+            // Open Modal
+            document.getElementById('fireLat').value = e.latlng.lat;
+            document.getElementById('fireLng').value = e.latlng.lng;
+            document.getElementById('fireModal').style.display = 'flex';
+            
+            // Turn off mode automatically
+            toggleReportMode();
+        });
+
+        function closeModal() {
+            document.getElementById('fireModal').style.display = 'none';
+        }
+
+        async function submitFireReport() {
+            const desc = document.getElementById('fireDesc').value;
+            const lat = document.getElementById('fireLat').value;
+            const lng = document.getElementById('fireLng').value;
+            const token = localStorage.getItem("token");
+
+            if(!token) {
+                alert("Please login to report.");
+                return window.location.href = "login.html";
+            }
+
+            try {
+                const res = await fetch("/plant/report-fire", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": token 
+                    },
+                    body: JSON.stringify({ description: desc, latitude: lat, longitude: lng })
+                });
+
+                if(res.ok) {
+                    alert("Report Submitted! Admin will verify before it appears on the map.");
+                    closeModal();
+                } else {
+                    alert("Failed to submit.");
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // Initialize
         loadMapData();
+
     </script>
 </body>
 </html>
